@@ -8,6 +8,20 @@ class UserContext {
     class UnsupportedGrantTypeException(message: String) : Exception(message)
     class UnsupportedAuthMethodException(message: String) : Exception(message)
 
+	sealed class ActorResultWip {
+		data class Actor(
+			val name: String
+		) : ActorResultWip()
+
+		data class UnsupportedGrantType(
+			val passed: String
+		) : ActorResultWip()
+
+		object UnsupportedAuthMethod(
+			val passed: String
+		) : ActorResultWip()
+	}
+
     var userId = VALUE_MISSING_OR_IRRELEVANT_TO_AUTH_TYPE
     var userName = VALUE_MISSING_OR_IRRELEVANT_TO_AUTH_TYPE
     var issuer = VALUE_MISSING_OR_IRRELEVANT_TO_AUTH_TYPE

@@ -11,6 +11,8 @@ import org.cloudfoundry.credhub.auth.UserContext.Companion.AUTH_METHOD_MUTUAL_TL
 import org.cloudfoundry.credhub.auth.UserContext.Companion.AUTH_METHOD_UAA
 import org.cloudfoundry.credhub.utils.DatabaseProfileResolver
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.instanceOf
+import org.hamcrest.core.Is.isA
 import org.hamcrest.core.IsEqual.equalTo
 import org.hamcrest.core.StringContains.containsString
 import org.junit.Test
@@ -125,10 +127,13 @@ class UserContextFactoryTest {
         val context = subject!!.createUserContext(oauth2Authentication)
 		context.grantType = "bruce is crazy"
 
-		Assertions.assertThrows(UserContext.UnsupportedGrantTypeException::class.java)
-		{
-		  context.actor
-		}
+        val actor = context.actor
+
+        assertThat(actor, isA(UserContext.ActorResultWip.UnsupportedGrantType))
+        assertThat((actor as UserContext.ActorResultWip.UnsupportedGrantType).Message).isEqualTo("foo")
+
+		assertThat(underTest is Food.Pizza).isTrue()
+		assertThat((underTest as Food.Pizza).slices).isEqualTo(4)
 	}
 
 	@Test
