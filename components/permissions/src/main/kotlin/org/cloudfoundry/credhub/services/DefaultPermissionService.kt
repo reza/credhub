@@ -38,6 +38,7 @@ constructor(
         }
 
         val userContext = userContextHolder.userContext
+
         permissionEntryList.forEach { permissionEntry ->
             if (!permissionCheckingService
                     .hasPermission(userContext?.actor!!, permissionEntry.path!!, PermissionOperation.WRITE_ACL)) {

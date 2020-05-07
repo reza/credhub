@@ -5,21 +5,10 @@ import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x500.style.BCStyle
 
 class UserContext {
-    class UnsupportedGrantTypeException(message: String) : Exception(message)
-    class UnsupportedAuthMethodException(message: String) : Exception(message)
-
 	sealed class ActorResultWip {
-		data class Actor(
-			val name: String
-		) : ActorResultWip()
-
-		data class UnsupportedGrantType(
-			val passed: String
-		) : ActorResultWip()
-
-		object UnsupportedAuthMethod(
-			val passed: String
-		) : ActorResultWip()
+		data class Actor(val value: String) : ActorResultWip()
+		data class UnsupportedGrantType(val value: String) : ActorResultWip()
+		data class UnsupportedAuthMethod(val value: String) : ActorResultWip()
 	}
 
     var userId = VALUE_MISSING_OR_IRRELEVANT_TO_AUTH_TYPE
@@ -36,27 +25,26 @@ class UserContext {
     var authMethod: String? = null
         private set
 
-    val actor: String?
-        @Throws(UnsupportedGrantTypeException::class)
+    val actor: ActorResultWip
         get() {
             if (AUTH_METHOD_UAA == this.authMethod) {
                 return when (this.grantType) {
                     UAA_PASSWORD_GRANT_TYPE -> {
-                        UAA_USER_ACTOR_PREFIX + ":" + this.userId
+                        ActorResultWip.Actor(UAA_USER_ACTOR_PREFIX + ":" + this.userId)
                     }
                     UAA_CLIENT_CREDENTIALS_GRANT_TYPE -> {
-                        UAA_CLIENT_ACTOR_PREFIX + ":" + this.clientId
+                        ActorResultWip.Actor(UAA_CLIENT_ACTOR_PREFIX + ":" + this.clientId)
                     }
                     else -> {
-                        throw UnsupportedGrantTypeException(this.grantType.toString())
+                        ActorResultWip.UnsupportedGrantType(this.grantType.toString())
                     }
                 }
             }
 
             return if (AUTH_METHOD_MUTUAL_TLS == this.authMethod) {
-                MTLS_ACTOR_PREFIX + "-" + parseAppIdentifier(this.clientId)
+                ActorResultWip.Actor(MTLS_ACTOR_PREFIX + "-" + parseAppIdentifier(this.clientId))
             } else {
-                throw UnsupportedAuthMethodException(this.authMethod.toString())
+                ActorResultWip.UnsupportedAuthMethod(this.authMethod.toString())
             }
         }
 

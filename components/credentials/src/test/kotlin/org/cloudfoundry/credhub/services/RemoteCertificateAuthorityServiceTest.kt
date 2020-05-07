@@ -9,6 +9,7 @@ import java.util.UUID
 import org.assertj.core.api.Assertions
 import org.cloudfoundry.credhub.ErrorMessages
 import org.cloudfoundry.credhub.auth.UserContext
+import org.cloudfoundry.credhub.auth.UserContext.ActorResultWip.Actor
 import org.cloudfoundry.credhub.auth.UserContextHolder
 import org.cloudfoundry.credhub.credential.CertificateCredentialValue
 import org.cloudfoundry.credhub.domain.CertificateGenerationParameters
@@ -42,7 +43,7 @@ class RemoteCertificateAuthorityServiceTest {
         subject = RemoteCertificateAuthorityService(userContextHolder, objectMapper, client)
 
         val userContext = mock(UserContext::class.java)
-        `when`(userContext.actor).thenReturn(USER)
+        `when`(userContext.actor).thenReturn(Actor(USER))
         `when`(userContextHolder.userContext).thenReturn(userContext)
     }
 

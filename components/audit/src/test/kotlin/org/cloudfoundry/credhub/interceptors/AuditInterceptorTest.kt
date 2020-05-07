@@ -1,30 +1,24 @@
 package org.cloudfoundry.credhub.interceptors
 
-import java.util.UUID
-import javax.servlet.http.HttpServletRequest.CLIENT_CERT_AUTH
-import org.cloudfoundry.credhub.audit.AuditableCredentialVersion
-import org.cloudfoundry.credhub.audit.AuditablePermissionData
-import org.cloudfoundry.credhub.audit.CEFAuditRecord
-import org.cloudfoundry.credhub.audit.OperationDeviceAction
-import org.cloudfoundry.credhub.audit.RequestDetails
+import org.cloudfoundry.credhub.audit.*
 import org.cloudfoundry.credhub.auth.UserContext
+import org.cloudfoundry.credhub.auth.UserContext.ActorResultWip.Actor
+import org.cloudfoundry.credhub.auth.UserContext.ActorResultWip.UnsupportedAuthMethod
 import org.cloudfoundry.credhub.auth.UserContextFactory
 import org.cloudfoundry.credhub.utils.VersionProvider
 import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.`is`
-import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.never
-import org.mockito.Mockito.verify
+import org.mockito.Mockito.*
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.security.core.Authentication
+import java.util.*
+import javax.servlet.http.HttpServletRequest.CLIENT_CERT_AUTH
 
 @RunWith(JUnit4::class)
 class AuditInterceptorTest {
@@ -56,7 +50,7 @@ class AuditInterceptorTest {
 
         userContext = mock(UserContext::class.java)
         `when`(userContextFactory!!.createUserContext(any<Authentication>())).thenReturn(userContext)
-        `when`(userContext!!.actor).thenReturn("user")
+        `when`(userContext!!.actor).thenReturn(Actor("user"))
         `when`(userContext!!.authMethod).thenReturn(CLIENT_CERT_AUTH)
     }
 
@@ -97,6 +91,28 @@ class AuditInterceptorTest {
         assertThat(auditRecord!!.httpStatusCode, `is`(equalTo(200)))
         assertThat(auditRecord!!.result, `is`(equalTo("success")))
         assertThat(auditRecord!!.authMechanism, `is`(equalTo(CLIENT_CERT_AUTH)))
+    }
+
+    @Test
+    fun afterCompletion_whenActorReturnsUnsupportedAuthMethod_logsAndReturns() {
+        `when`(userContext!!.actor).thenReturn(UnsupportedAuthMethod("invalid-auth-method"))
+
+        subject!!.afterCompletion(request!!, response!!, Any(), null)
+        assertThat(auditRecord!!.username, nullValue())
+        assertThat(auditRecord!!.httpStatusCode, nullValue())
+        assertThat(auditRecord!!.result, nullValue())
+        assertThat(auditRecord!!.authMechanism, nullValue())
+    }
+
+    @Test
+    fun afterCompletion_whenActorReturnsUnsupportedGrantType_logsAndReturns() {
+        `when`(userContext!!.actor).thenReturn(UserContext.ActorResultWip.UnsupportedGrantType("invalid-grant-type"))
+
+        subject!!.afterCompletion(request!!, response!!, Any(), null)
+        assertThat(auditRecord!!.username, nullValue())
+        assertThat(auditRecord!!.httpStatusCode, nullValue())
+        assertThat(auditRecord!!.result, nullValue())
+        assertThat(auditRecord!!.authMechanism, nullValue())
     }
 
     @Test

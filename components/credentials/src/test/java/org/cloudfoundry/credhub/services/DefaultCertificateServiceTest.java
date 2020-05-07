@@ -14,6 +14,7 @@ import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.cloudfoundry.credhub.ErrorMessages;
 import org.cloudfoundry.credhub.audit.CEFAuditRecord;
 import org.cloudfoundry.credhub.auth.UserContext;
+import org.cloudfoundry.credhub.auth.UserContext.ActorResultWip.Actor;
 import org.cloudfoundry.credhub.auth.UserContextHolder;
 import org.cloudfoundry.credhub.credential.CertificateCredentialValue;
 import org.cloudfoundry.credhub.domain.CertificateCredentialFactory;
@@ -24,7 +25,6 @@ import org.cloudfoundry.credhub.exceptions.EntryNotFoundException;
 import org.cloudfoundry.credhub.exceptions.InvalidQueryParameterException;
 import org.cloudfoundry.credhub.exceptions.ParameterizedValidationException;
 import org.cloudfoundry.credhub.requests.BaseCredentialGenerateRequest;
-import org.cloudfoundry.credhub.utils.TestConstants;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -83,7 +83,7 @@ public class DefaultCertificateServiceTest {
     certificateCredentialFactory = mock(CertificateCredentialFactory.class);
     credentialVersionDataService = mock(CredentialVersionDataService.class);
     userContext = mock(UserContext.class);
-    when(userContext.getActor()).thenReturn(actor);
+    when(userContext.getActor()).thenReturn(new Actor(actor));
     when(userContextHolder.getUserContext()).thenReturn(userContext);
     subjectWithoutConcatenateCas = new DefaultCertificateService(
       credentialService,
@@ -392,7 +392,7 @@ public class DefaultCertificateServiceTest {
     when(userContextHolder.getUserContext()).thenReturn(userContext);
 
     final String user = "my-user";
-    when(userContext.getActor()).thenReturn(user);
+    when(userContext.getActor()).thenReturn(new Actor(user));
 
     when(certificateDataService.findByName("my-credential"))
       .thenReturn(myCredential);
@@ -414,7 +414,7 @@ public class DefaultCertificateServiceTest {
     when(userContextHolder.getUserContext()).thenReturn(userContext);
 
     final String user = "my-user";
-    when(userContext.getActor()).thenReturn(user);
+    when(userContext.getActor()).thenReturn(new Actor(user));
 
 
     when(certificateVersionDataService.findAllVersions(uuid))
@@ -439,7 +439,7 @@ public class DefaultCertificateServiceTest {
     when(userContextHolder.getUserContext()).thenReturn(userContext);
 
     final String user = "my-user";
-    when(userContext.getActor()).thenReturn(user);
+    when(userContext.getActor()).thenReturn(new Actor(user));
 
     when(certificateDataService.findByUuid(uuid))
       .thenReturn(aCredential);
@@ -481,7 +481,7 @@ public class DefaultCertificateServiceTest {
     when(userContextHolder.getUserContext()).thenReturn(userContext);
 
     final String user = "my-user";
-    when(userContext.getActor()).thenReturn(user);
+    when(userContext.getActor()).thenReturn(new Actor(user));
 
 
     when(certificateVersionDataService.findAllValidVersions(uuid))
@@ -528,7 +528,7 @@ public class DefaultCertificateServiceTest {
     when(userContextHolder.getUserContext()).thenReturn(userContext);
     final String user = "my-user";
     final String credentialName = "my-credential";
-    when(userContext.getActor()).thenReturn(user);
+    when(userContext.getActor()).thenReturn(new Actor(user));
 
     final Credential certificate = mock(Credential.class);
     when(certificate.getName()).thenReturn(credentialName);
@@ -589,7 +589,7 @@ public class DefaultCertificateServiceTest {
     when(userContextHolder.getUserContext()).thenReturn(userContext);
     final String user = "my-user";
     final String credentialName = "my-credential";
-    when(userContext.getActor()).thenReturn(user);
+    when(userContext.getActor()).thenReturn(new Actor(user));
 
     final Credential certificate = mock(Credential.class);
     when(certificate.getName()).thenReturn(credentialName);
@@ -614,7 +614,7 @@ public class DefaultCertificateServiceTest {
     when(userContextHolder.getUserContext()).thenReturn(userContext);
     final String user = "my-user";
     final String credentialName = "my-credential";
-    when(userContext.getActor()).thenReturn(user);
+    when(userContext.getActor()).thenReturn(new Actor(user));
 
     final Credential certificate = mock(Credential.class);
     when(certificate.getName()).thenReturn(credentialName);
@@ -636,7 +636,7 @@ public class DefaultCertificateServiceTest {
     when(userContextHolder.getUserContext()).thenReturn(userContext);
     final String user = "my-user";
     final String credentialName = "my-credential";
-    when(userContext.getActor()).thenReturn(user);
+    when(userContext.getActor()).thenReturn(new Actor(user));
 
     when(certificateDataService.findByUuid(certificateUuid)).thenReturn(null);
 
@@ -672,7 +672,7 @@ public class DefaultCertificateServiceTest {
     final String user = "my-user";
     final UserContext userContext = mock(UserContext.class);
     when(userContextHolder.getUserContext()).thenReturn(userContext);
-    when(userContext.getActor()).thenReturn(user);
+    when(userContext.getActor()).thenReturn(new Actor(user));
 
     when(certificateDataService.findByUuid(certificateUuid)).thenReturn(certificate);
 
@@ -699,7 +699,7 @@ public class DefaultCertificateServiceTest {
     final String user = "my-user";
     final UserContext userContext = mock(UserContext.class);
     when(userContextHolder.getUserContext()).thenReturn(userContext);
-    when(userContext.getActor()).thenReturn(user);
+    when(userContext.getActor()).thenReturn(new Actor(user));
 
     when(certificateDataService.findByUuid(certificateUuid)).thenReturn(certificate);
 
@@ -783,7 +783,7 @@ public class DefaultCertificateServiceTest {
     when(userContextHolder.getUserContext()).thenReturn(userContext);
 
     final String user = "my-user";
-    when(userContext.getActor()).thenReturn(user);
+    when(userContext.getActor()).thenReturn(new Actor(user));
 
     final List<CredentialVersion> results = subjectWithConcatenateCas.getVersions(certUuid, false);
     CertificateCredentialVersion resultCert = (CertificateCredentialVersion) results.get(0);

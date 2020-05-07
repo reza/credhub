@@ -4,6 +4,8 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.credhub.audit.CEFAuditRecord
+import org.cloudfoundry.credhub.auth.UserContext
+import org.cloudfoundry.credhub.auth.UserContext.ActorResultWip.*
 import org.cloudfoundry.credhub.auth.UserContextFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.lang.Nullable
@@ -24,13 +26,32 @@ internal constructor(
         return true
     }
 
-    override fun afterCompletion(request: HttpServletRequest, response: HttpServletResponse, handler: Any, @Nullable exception: Exception?) {
+    override fun afterCompletion(
+		request: HttpServletRequest,
+		response: HttpServletResponse,
+		handler: Any,
+		@Nullable exception: Exception?
+	) {
         val userAuth = request.userPrincipal ?: return
         val userContext = userContextFactory.createUserContext(userAuth as Authentication)
 
+
+        when(val actor = userContext.actor){
+            is Actor -> {
+                auditRecord.setUserGuid(actor.value)
+            }
+            is UnsupportedGrantType -> {
+                NORMAL_LOGGER.info("Unsupported Grant Type: " + actor.value)
+                return
+            }
+            is UnsupportedAuthMethod -> {
+                NORMAL_LOGGER.info("Unsupported Auth Method: " + actor.value)
+                return
+            }
+        }
+
         auditRecord.username = userAuth.name
         auditRecord.httpStatusCode = response.status
-        auditRecord.setUserGuid(userContext.actor!!)
         auditRecord.authMechanism = userContext.authMethod!!
 
         LOGGER.info(auditRecord.toString())
@@ -39,5 +60,6 @@ internal constructor(
     companion object {
 
         private val LOGGER = LogManager.getLogger("CEFAudit")
+		private val NORMAL_LOGGER = LogManager.getLogger(AuditInterceptor::class.java)
     }
 }
