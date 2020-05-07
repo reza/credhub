@@ -1,9 +1,11 @@
 package org.cloudfoundry.credhub.services
 
-import java.util.ArrayList
-import java.util.UUID
 import org.cloudfoundry.credhub.ErrorMessages
 import org.cloudfoundry.credhub.PermissionOperation
+import org.cloudfoundry.credhub.auth.UserContext
+import org.cloudfoundry.credhub.auth.UserContext.ActorResultWip.Actor
+import org.cloudfoundry.credhub.auth.UserContext.ActorResultWip.UnsupportedAuthMethod
+import org.cloudfoundry.credhub.auth.UserContext.ActorResultWip.UnsupportedGrantType
 import org.cloudfoundry.credhub.auth.UserContextHolder
 import org.cloudfoundry.credhub.data.PermissionData
 import org.cloudfoundry.credhub.data.PermissionDataService
@@ -18,6 +20,8 @@ import org.cloudfoundry.credhub.requests.PermissionEntry
 import org.cloudfoundry.credhub.requests.PermissionsV2Request
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import java.util.ArrayList
+import java.util.UUID
 
 @Service
 class DefaultPermissionService @Autowired
@@ -38,20 +42,31 @@ constructor(
         }
 
         val userContext = userContextHolder.userContext
-
-        permissionEntryList.forEach { permissionEntry ->
-            if (!permissionCheckingService
-                    .hasPermission(userContext?.actor!!, permissionEntry.path!!, PermissionOperation.WRITE_ACL)) {
-                throw EntryNotFoundException(ErrorMessages.Credential.INVALID_ACCESS)
+        when (val actor = userContext?.actor!!) {
+            is Actor -> {
+                permissionEntryList.forEach { permissionEntry ->
+                    if (!permissionCheckingService
+                            .hasPermission(actor.value, permissionEntry.path!!, PermissionOperation.WRITE_ACL)
+                    ) {
+                        throw EntryNotFoundException(ErrorMessages.Credential.INVALID_ACCESS)
+                    }
+                    if (!permissionCheckingService.userAllowedToOperateOnActor(permissionEntry.actor)) {
+                        throw InvalidPermissionOperationException(ErrorMessages.Permissions.INVALID_UPDATE_OPERATION)
+                    }
+                    if (permissionCheckingService.hasPermissions(
+                            permissionEntry.actor!!, permissionEntry.path!!,
+                            permissionEntry.allowedOperations!!
+                        )
+                    ) {
+                        throw PermissionAlreadyExistsException(ErrorMessages.Permissions.ALREADY_EXISTS)
+                    }
+                }
             }
-            if (!permissionCheckingService.userAllowedToOperateOnActor(permissionEntry.actor)) {
-                throw InvalidPermissionOperationException(ErrorMessages.Permissions.INVALID_UPDATE_OPERATION)
-            }
-            if (permissionCheckingService.hasPermissions(permissionEntry.actor!!, permissionEntry.path!!,
-                    permissionEntry.allowedOperations!!)) {
-                throw PermissionAlreadyExistsException(ErrorMessages.Permissions.ALREADY_EXISTS)
-            }
+            is UnsupportedGrantType -> TODO()
+            is UnsupportedAuthMethod -> TODO()
+            null -> TODO()
         }
+
         return permissionDataService.savePermissionsWithLogging(permissionEntryList)
     }
 
@@ -66,11 +81,20 @@ constructor(
         if (credentialVersion == null) {
             throw EntryNotFoundException(ErrorMessages.RESOURCE_NOT_FOUND)
         }
-
-        if (!permissionCheckingService
-                .hasPermission(userContextHolder.userContext?.actor!!, credentialVersion.name!!,
-                    PermissionOperation.READ_ACL)) {
-            throw EntryNotFoundException(ErrorMessages.Credential.INVALID_ACCESS)
+        when (val actor = userContextHolder.userContext?.actor!!) {
+            is Actor -> {
+                if (!permissionCheckingService
+                        .hasPermission(
+                            actor.value, credentialVersion.name!!,
+                            PermissionOperation.READ_ACL
+                        )
+                ) {
+                    throw EntryNotFoundException(ErrorMessages.Credential.INVALID_ACCESS)
+                }
+            }
+            is UnsupportedGrantType -> TODO()
+            is UnsupportedAuthMethod -> TODO()
+            null -> TODO()
         }
 
         return getPermissions(credentialVersion.credential!!)
@@ -81,18 +105,34 @@ constructor(
             throw EntryNotFoundException(ErrorMessages.RESOURCE_NOT_FOUND)
         }
 
-        if (!permissionCheckingService
-                .hasPermission(userContextHolder.userContext?.actor!!, guid, PermissionOperation.READ_ACL)) {
-            throw InvalidPermissionException(ErrorMessages.Credential.INVALID_ACCESS)
+        when (val actor = userContextHolder.userContext?.actor!!) {
+            is Actor -> {
+                if (!permissionCheckingService
+                        .hasPermission(actor.value, guid, PermissionOperation.READ_ACL)
+                ) {
+                    throw InvalidPermissionException(ErrorMessages.Credential.INVALID_ACCESS)
+                }
+            }
+            is UnsupportedGrantType -> TODO()
+            is UnsupportedAuthMethod -> TODO()
+            null -> TODO()
         }
 
         return permissionDataService.getPermission(guid)
     }
 
     override fun deletePermissions(credentialName: String, actor: String): Boolean {
-        if (!permissionCheckingService
-                .hasPermission(userContextHolder.userContext?.actor!!, credentialName, PermissionOperation.WRITE_ACL)) {
-            throw EntryNotFoundException(ErrorMessages.Credential.INVALID_ACCESS)
+        when (val ucActor = userContextHolder.userContext?.actor!!) {
+            is Actor -> {
+                if (!permissionCheckingService
+                        .hasPermission(ucActor.value, credentialName, PermissionOperation.WRITE_ACL)
+                ) {
+                    throw EntryNotFoundException(ErrorMessages.Credential.INVALID_ACCESS)
+                }
+            }
+            is UnsupportedGrantType -> TODO()
+            is UnsupportedAuthMethod -> TODO()
+            null -> TODO()
         }
 
         if (!permissionCheckingService.userAllowedToOperateOnActor(actor)) {
@@ -120,9 +160,17 @@ constructor(
 
     override fun saveV2Permissions(permissionsRequest: PermissionsV2Request): PermissionData {
         val userContext = userContextHolder.userContext
-        if (!permissionCheckingService
-                .hasPermission(userContext?.actor!!, permissionsRequest.getPath(), PermissionOperation.WRITE_ACL)) {
-            throw EntryNotFoundException(ErrorMessages.Credential.INVALID_ACCESS)
+        when (val actor = userContext?.actor!!) {
+            is Actor -> {
+                if (!permissionCheckingService
+                        .hasPermission(actor.value, permissionsRequest.getPath(), PermissionOperation.WRITE_ACL)
+                ) {
+                    throw EntryNotFoundException(ErrorMessages.Credential.INVALID_ACCESS)
+                }
+            }
+            is UnsupportedGrantType -> TODO()
+            is UnsupportedAuthMethod -> TODO()
+            null -> TODO()
         }
         if (!permissionCheckingService.userAllowedToOperateOnActor(permissionsRequest.actor)) {
             throw InvalidPermissionOperationException(ErrorMessages.Permissions.INVALID_UPDATE_OPERATION)
@@ -139,15 +187,34 @@ constructor(
 
     override fun findByPathAndActor(path: String, actor: String): PermissionData? {
         val userContext = userContextHolder.userContext
-        if (!permissionCheckingService.hasPermission(userContext?.actor!!, path, PermissionOperation.READ_ACL)) {
-            throw EntryNotFoundException(ErrorMessages.Permissions.INVALID_ACCESS)
+        when (val ucActor = userContext?.actor!!) {
+            is Actor -> {
+                if (!permissionCheckingService.hasPermission(ucActor.value, path, PermissionOperation.READ_ACL)) {
+                    throw EntryNotFoundException(ErrorMessages.Permissions.INVALID_ACCESS)
+                }
+            }
+            is UnsupportedGrantType -> TODO()
+            is UnsupportedAuthMethod -> TODO()
+            null -> TODO()
         }
         return permissionDataService.findByPathAndActor(path, actor)
     }
 
-    private fun checkActorPermissions(permissionUUID: UUID, actor: String?) {
-        if (!permissionCheckingService.hasPermission(actor!!, permissionUUID, PermissionOperation.WRITE_ACL)) {
-            throw EntryNotFoundException(ErrorMessages.Permissions.DOES_NOT_EXIST)
+    private fun checkActorPermissions(permissionUUID: UUID, actor: UserContext.ActorResultWip?) {
+        when (actor) {
+            is Actor -> {
+                if (!permissionCheckingService.hasPermission(
+                        actor.value,
+                        permissionUUID,
+                        PermissionOperation.WRITE_ACL
+                    )
+                ) {
+                    throw EntryNotFoundException(ErrorMessages.Permissions.DOES_NOT_EXIST)
+                }
+            }
+            is UnsupportedGrantType -> TODO()
+            is UnsupportedAuthMethod -> TODO()
+            null -> TODO()
         }
         if (!permissionCheckingService.userAllowedToOperateOnActor(permissionUUID)) {
             throw InvalidPermissionOperationException(ErrorMessages.Permissions.INVALID_UPDATE_OPERATION)

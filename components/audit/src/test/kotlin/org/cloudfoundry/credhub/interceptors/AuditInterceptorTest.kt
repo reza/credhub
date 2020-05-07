@@ -1,5 +1,7 @@
 package org.cloudfoundry.credhub.interceptors
 
+import java.util.*
+import javax.servlet.http.HttpServletRequest.CLIENT_CERT_AUTH
 import org.cloudfoundry.credhub.audit.*
 import org.cloudfoundry.credhub.auth.UserContext
 import org.cloudfoundry.credhub.auth.UserContext.ActorResultWip.Actor
@@ -17,8 +19,6 @@ import org.mockito.Mockito.*
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.security.core.Authentication
-import java.util.*
-import javax.servlet.http.HttpServletRequest.CLIENT_CERT_AUTH
 
 @RunWith(JUnit4::class)
 class AuditInterceptorTest {

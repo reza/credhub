@@ -5,11 +5,11 @@ import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x500.style.BCStyle
 
 class UserContext {
-	sealed class ActorResultWip {
-		data class Actor(val value: String) : ActorResultWip()
-		data class UnsupportedGrantType(val value: String) : ActorResultWip()
-		data class UnsupportedAuthMethod(val value: String) : ActorResultWip()
-	}
+    sealed class ActorResultWip {
+        data class Actor(val value: String) : ActorResultWip()
+        data class UnsupportedGrantType(val value: String) : ActorResultWip()
+        data class UnsupportedAuthMethod(val value: String) : ActorResultWip()
+    }
 
     var userId = VALUE_MISSING_OR_IRRELEVANT_TO_AUTH_TYPE
     var userName = VALUE_MISSING_OR_IRRELEVANT_TO_AUTH_TYPE
